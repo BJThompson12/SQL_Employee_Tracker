@@ -7,7 +7,7 @@ const { query } = require('./db/connections');
 
 let currrentDepartments = []
 
-const getDepartments = async () => {
+const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
     db.query("SELECT * FROM department", (err, results) => {
       if (err) {
@@ -21,7 +21,7 @@ currrentDepartments += data
   console.log('');
   console.log('\x1b[33m ALL DEPARTMENTS \x1b[0m');
   console.log('');
-  console.table((currrentDepartments));
+  console.table((data));
   initialPrompt()
 };
 
@@ -100,34 +100,30 @@ const addRole = async () => {
   }
 
   const addDepartment = async () => {
-    await inquirer .prompt([
+    await inquirer.prompt([
       {
         type: "input",
         message: "What Department Do You Want To Add?",
         name: "depts",
       },
     ])
-    .then((data) => handleAddDept(data));
-  }
-  const handleAddDept = async (val) => {
-    const { depts } = val;
-    const query = `INSERT INTO department (id, name) VALUES (100, "${depts}")`
-    const data = await new Promise((resolve, reject) => {
-      db.query(
-        query,
-        (err, results) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(results);
-          }
+    .then((answers) => {
+      const department = answers.depts;
+      const sql = `INSERT INTO department (dep_name) VALUES ('${department}')`
+      db.query(sql, function (err, results) {
+        if (err) {
+          console.log(err);
+        } else {
+         // resolve(results);
+          console.log('');
+          console.log('\x1b[33m DEPARTMENT ADDED \x1b[0m');
+          console.log('');
+          viewAllDepartments()
+          initialPrompt()
         }
-      );
+      });
     });
-    console.table([data]);
-    initialPrompt();
-  };
-
+  }
 
       // const answer = answers.initialPrompt;
       // switch (answer) {
@@ -207,8 +203,11 @@ const initialPrompt  = async () => {
         addRole()
         break;
       case 'View All Departments':
-        getDepartments()
+        viewAllDepartments()
         break;
+      case 'Add Department':
+        addDepartment()
+        break;  
     }
   });
 };
@@ -218,7 +217,7 @@ const initialPromptQuestions = [
     type: 'list',
     name: 'initialPrompt',
     message: 'What would you like to do?',
-    choices: ['View All Employees', 'Add Employees', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments']
+    choices: ['View All Employees', 'Add Employees', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
   },
 ]
 
