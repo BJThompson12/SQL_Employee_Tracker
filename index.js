@@ -1,22 +1,26 @@
 const inquirer = require('inquirer');
 const figlet = require('figlet');
+const cTable = require('console.table')
 const db = require("./db/connections");
 //const initialPrompt = require('./lib/initialPrompt')
 const getDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
-    db.query("SELECT * FROM department", (err, results) => {
+    db.query("SELECT id, dep_name FROM department", (err, results) => {
       if (err) {
         reject(err);
       } else {
-        //console.log(results);
         resolve(results);
       }
     });
   });
-  const deptsArr = data.map((element) => element.dep_name);
-  console.log(deptsArr);
-  return deptsArr;
+  console.log('');
+  console.log('\x1b[33m ALL DEPARTMENTS \x1b[0m');
+  console.log('');
+  console.table((data));
+  initialPrompt()
 };
+
+/*
 const departments = async () => {
   const choicesArr = await getDepartments()
   inquirer
@@ -29,10 +33,11 @@ const departments = async () => {
       },
     ])
     .then((data) => {
-      
+
       console.log(data);
     });
 };
+*/
 
 // Connect to MySQL and title
 db.connect((err) => {
@@ -54,7 +59,7 @@ const initialPrompt  = async () => {
     console.log('Answer:', answers.initialPrompt);
     const answer = answers.initialPrompt;
     switch (answer) {
-      case 'View All Emp(loyees':
+      case 'View All Employees':
         viewAllEmployees();
         break;
       case 'Add Employees':
@@ -70,7 +75,7 @@ const initialPrompt  = async () => {
         console.log('I chose Add Role');
         break;
       case 'View All Departments':
-        departments()
+        getDepartments()
         break;
     }
   });

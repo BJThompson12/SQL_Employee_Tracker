@@ -1,3 +1,2 @@
-SELECT * FROM department
+SELECT id, dep_name FROM department
 
-SELECT * FROM Sales
