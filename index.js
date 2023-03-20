@@ -5,7 +5,9 @@ const db = require('./db/connections');
 const { query } = require('./db/connections');
 //const initialPrompt = require('./lib/initialPrompt')
 
-let currrentDepartments = [];
+//let departmentArray = [];
+//let roleArray = [];
+//let employeeArray = [];
 
 const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
@@ -17,7 +19,6 @@ const viewAllDepartments = async () => {
       }
     });
   });
-  currrentDepartments += data;
   console.log('');
   console.log('\x1b[33m ALL DEPARTMENTS \x1b[0m');
   console.log('');
@@ -57,47 +58,57 @@ const getRoles = async () => {
   initialPrompt();
 };
 
-const addRole = async () => {
-  await inquirer
-    .prompt([
-      {
-        type: 'input',
-        name: 'roleTitle',
-        message: 'What Role would you like to add?',
-      },
-      {
-        type: 'input',
-        name: 'roleSalary',
-        message: 'What is the salary of the Role?',
-      },
-      {
-        type: 'list',
-        name: 'roleDepartment',
-        message: 'What is the Department for the Role?',
-        choices: ['Sales', 'Engineering', 'Finance', 'Legal'],
-      },
-    ])
-    .then((answers) => {
-      const title = answers.roleTitle;
-      const salary = answers.roleSalary;
-      const department = answers.roleDepartment;
-
-      console.log(title, salary, department);
-      let sql = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
-      db.query(sql, function (err, results) {
-        if (err) {
-          console.log(err);
-        } else {
-          // resolve(results);
-          console.log(results);
-          console.log('');
-          console.log('\x1b[33m ROLE ADDED \x1b[0m');
-          console.log('');
-          getRoles();
-          initialPrompt();
-        }
+const addRole = () => {
+  db.query(`SELECT dep_name FROM department`, async function (err, results) {
+    if (err) {
+      console.log(err);
+    } else {
+     let departmentArray = []
+      results.forEach((obj) => {
+        // remove the title from the object
+        departmentArray.push(obj['dep_name']);
       });
-    });
+      //console.log(departmentArray);
+      await inquirer
+        .prompt([
+          {
+            type: 'input',
+            name: 'roleTitle',
+            message: 'What Role would you like to add?',
+          },
+          {
+            type: 'input',
+            name: 'roleSalary',
+            message: 'What is the salary of the Role?',
+          },
+          {
+            type: 'list',
+            name: 'roleDepartment',
+            message: 'What is the Department for the Role?',
+            choices: departmentArray,
+          },
+        ])
+        .then((answers) => {
+          const title = answers.roleTitle;
+          const salary = answers.roleSalary;
+          const department = answers.roleDepartment;
+         // console.log(title, salary, department);
+          let sql = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
+          db.query(sql, function (err, results) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(results);
+              console.log('');
+              console.log('\x1b[33m ROLE ADDED \x1b[0m');
+              console.log('');
+              getRoles();
+              initialPrompt();
+            }
+          });
+        });
+    }
+  });
 };
 
 const addDepartment = async () => {
@@ -127,14 +138,12 @@ const addDepartment = async () => {
     });
 };
 
-let roleArray = [];
-let employeeArray = [];
-
 const addEmployee = () => {
   db.query(`SELECT title FROM roles`, async function (err, results) {
     if (err) {
       console.log(err);
     } else {
+      let roleArray = []
       results.forEach((obj) => {
         // remove the title from the object
         roleArray.push(obj['title']);
@@ -145,11 +154,14 @@ const addEmployee = () => {
         if (err) {
           console.log(err);
         } else {
-          console.log(`Here are the results`);
-          console.log(results);
-          const newArray = results.map(({first_name, last_name}) => ({name: `${first_name} ${last_name}`}));
+          let employeeArray = []
+          //console.log(`Here are the results`);
+          //console.log(results);
+          const newArray = results.map(({ first_name, last_name }) => ({
+            name: `${first_name} ${last_name}`,
+          }));
           console.log(newArray);
-          newArray.forEach((obj) =>{
+          newArray.forEach((obj) => {
             employeeArray.push(obj['name']);
           });
           console.log(employeeArray);
@@ -185,7 +197,6 @@ const addEmployee = () => {
               const manager = answers.manager;
               console.log(first, last, role, manager);
               // add the employee
-
             });
         }
       });
@@ -272,7 +283,6 @@ db.connect((err) => {
 
 const initialPrompt = async () => {
   await inquirer.prompt(initialPromptQuestions).then((answers) => {
-    console.log('Answer:', answers.initialPrompt);
     const answer = answers.initialPrompt;
     switch (answer) {
       case 'View All Departments':
