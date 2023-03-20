@@ -11,7 +11,7 @@ const { query } = require('./db/connections');
 
 const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
-    db.query('SELECT * FROM department', (err, results) => {
+    db.query(`SELECT id, dep_name AS 'name' FROM department`, (err, results) => {
       if (err) {
         reject(err);
       } else {
@@ -27,8 +27,23 @@ const viewAllDepartments = async () => {
 };
 
 const viewAllEmployees = async () => {
+  const viewEmployeesQuery = `SELECT 
+  employees.id, 
+  employees.first_name, 
+  employees.last_name, 
+  roles.title, 
+  department.dep_name AS 'department', 
+  roles.salary,
+  CONCAT(manager.first_name, ' ', manager.last_name) AS 'manager'
+FROM 
+  employees
+  JOIN roles ON employees.role_id = roles.id
+  JOIN department ON roles.department_id = department.id
+  LEFT JOIN employees AS manager ON employees.manager_id = manager.id
+ORDER BY 
+  employees.id ASC;`
   const data = await new Promise((resolve, reject) => {
-    db.query('SELECT * FROM employees', (err, results) => {
+    db.query(viewEmployeesQuery, (err, results) => {
       if (err) {
         reject(err);
       } else {
@@ -41,9 +56,13 @@ const viewAllEmployees = async () => {
   initialPrompt();
 };
 
-const getRoles = async () => {
+const viewAllRoles = async () => {
+  const viewRolesQuery = `SELECT roles.id, roles.title, department.dep_name AS department, salary
+  FROM roles
+  INNER JOIN department ON roles.department_id = department.id
+  ORDER BY roles.id ASC`
   const data = await new Promise((resolve, reject) => {
-    db.query('SELECT * FROM roles', (err, results) => {
+    db.query(viewRolesQuery, (err, results) => {
       if (err) {
         reject(err);
       } else {
@@ -93,16 +112,14 @@ const addRole = () => {
           const salary = answers.roleSalary;
           const department = answers.roleDepartment;
          // console.log(title, salary, department);
-          let sql = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
-          db.query(sql, function (err, results) {
+          let insertRole = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
+          db.query(insertRole, function (err, results) {
             if (err) {
               console.log(err);
             } else {
-              console.log(results);
               console.log('');
               console.log('\x1b[33m ROLE ADDED \x1b[0m');
               console.log('');
-              getRoles();
               initialPrompt();
             }
           });
@@ -131,7 +148,6 @@ const addDepartment = async () => {
           console.log('');
           console.log('\x1b[33m DEPARTMENT ADDED \x1b[0m');
           console.log('');
-          viewAllDepartments();
           initialPrompt();
         }
       });
@@ -196,6 +212,13 @@ const addEmployee = () => {
               const role = answers.employeeRole;
               const manager = answers.manager;
               console.log(first, last, role, manager);
+              const addEmployeeQuery = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
+              VALUES (${first}, ${last}, ${role}, ${manager})`
+              db.query(`SELECT title FROM roles`, async function (err, results) {
+                if (err) {
+                  console.log(err);
+                }})
+              initialPrompt();
               // add the employee
             });
         }
@@ -204,79 +227,21 @@ const addEmployee = () => {
   });
 };
 
-const generateEmployeeArray = () => {};
-
-// console.log(title, salary, department);
-// let sql = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
-// db.query(sql, function (err, results) {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     // resolve(results);
-//     console.log(results);
-//     console.log('');
-//     console.log('\x1b[33m ROLE ADDED \x1b[0m');
-//     console.log('');
-//     getRoles()
-//     initialPrompt()
-//   }
-// });
-
-// const answer = answers.initialPrompt;
-// switch (answer) {
-//   case 'View All Employees':
-//     viewAllEmployees();
-//     break;
-//   case 'Add Employees':
-//     console.log('I chose add employees');
-//     break;
-//   case 'Update Employee Role':
-//     console.log('placeholder');
-//     break;
-//   case 'View All Roles':
-//     getRoles();
-//     break;
-//   case 'Add Role':
-//     console.log('I chose Add Role');
-//     break;
-//   case 'View All Departments':
-//     getDepartments();
-//     break;
-// }
-
-/*
-const departments = async () => {
-  const choicesArr = await getDepartments()
-  inquirer
-    .prompt([
-      {
-        type: "list",
-        message: "What Department would you like to see?",
-        name: "deptartments",
-        choices: choicesArr,
-      },
-    ])
-    .then((data) => {
-
-      console.log(data);
-    });
-};
-*/
-
 // Connect to MySQL and title
 db.connect((err) => {
   if (err) {
     throw err;
   }
   console.log(
-    `====================================================================================`
+    `==========================================================================`
   );
   console.log(``);
-  console.log(figlet.textSync('Employee Tracker'));
+  console.log(figlet.textSync('             Employee'));
+  console.log(figlet.textSync('             Manager'));
   console.log(``);
   console.log(``);
   console.log(
-    `====================================================================================`
+    `==========================================================================`
   );
   initialPrompt();
 });
@@ -289,7 +254,7 @@ const initialPrompt = async () => {
         viewAllDepartments();
         break;
       case 'View All Roles':
-        getRoles();
+        viewAllRoles();
         break;
       case 'View All Employees':
         viewAllEmployees();
