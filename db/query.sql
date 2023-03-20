@@ -24,6 +24,9 @@ FROM
 ORDER BY 
   employees.id ASC;
 
+-- view id, first_name and last_name from employees
+SELECT id, first_name, last_name FROM employees ORDER BY id ASC;
+
 -- add department --
 INSERT INTO roles (title, salary, department_id) 
 VALUES ('Assistant', 60000, 4);
