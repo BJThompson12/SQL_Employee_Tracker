@@ -155,10 +155,16 @@ const addDepartment = async () => {
 };
 
 const addEmployee = () => {
-  db.query(`SELECT title FROM roles`, async function (err, results) {
+  db.query(`SELECT id, title FROM roles ORDER BY id ASC`, async function (err, results) {
     if (err) {
       console.log(err);
     } else {
+      console.log(results);
+      // map the results to a key : value pair for inquirer
+      let newResults = results.map(obj => {
+        return {"value": obj.id, "name": obj.title}
+      })
+      let test = results
       let roleArray = []
       results.forEach((obj) => {
         // remove the title from the object
@@ -197,7 +203,7 @@ const addEmployee = () => {
                 type: 'list',
                 name: 'employeeRole',
                 message: 'What is the employees role?',
-                choices: roleArray,
+                choices: newResults,
               },
               {
                 type: 'list',
