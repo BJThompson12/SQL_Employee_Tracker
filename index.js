@@ -4,11 +4,8 @@ const colors = require('colors/safe');
 const cTable = require('console.table');
 const db = require('./config/connections');
 const { query } = require('./config/connections');
-//const initialPrompt = require('./lib/initialPrompt')
+const initialPrompt = require('./lib/initialPrompt')
 
-//let departmentArray = [];
-//let roleArray = [];
-//let employeeArray = [];
 
 const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
@@ -339,73 +336,3 @@ db.connect((err) => {
   console.log(``);
   initialPrompt();
 });
-
-const initialPrompt = async () => {
-  await inquirer.prompt(initialPromptQuestions).then((answers) => {
-    const answer = answers.initialPrompt;
-    switch (answer) {
-      case 'View All Departments':
-        viewAllDepartments();
-        break;
-      case 'View All Roles':
-        viewAllRoles();
-        break;
-      case 'View All Employees':
-        viewAllEmployees();
-        break;
-      case 'Add Department':
-        addDepartment();
-        break;
-      case 'Add Role':
-        addRole();
-        break;
-      case 'Add an Employee':
-        addEmployee();
-        break;
-      case 'Update Employee Role':
-        updateEmployeeRole();
-        break;
-      case 'Exit':
-        showThankYou();
-        break;
-    }
-  });
-};
-
-const initialPromptQuestions = [
-  {
-    type: 'list',
-    name: 'initialPrompt',
-    message: 'What would you like to do?',
-    choices: [
-      'View All Departments',
-      'View All Roles',
-      'View All Employees',
-      'Add Department',
-      'Add Role',
-      'Add an Employee',
-      'Update Employee Role',
-      'Exit',
-    ],
-  },
-];
-
-function showThankYou() {
-  console.log(``);
-  console.log(
-    colors.cyan(
-      `=====================================================================================`
-    )
-  );
-  console.log(``);
-  console.log(colors.cyan(figlet.textSync('See You Next Time!')));
-  // console.log(colors.cyan(figlet.textSync('                Manager')));
-  console.log(``);
-  console.log(``);
-  console.log(
-    colors.cyan(
-      `=====================================================================================`
-    )
-  );
-  process.exit(0)
-}

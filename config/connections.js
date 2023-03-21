@@ -1,7 +1,6 @@
 const mysql2 = require('mysql2');
 require('dotenv').config();
 
-// Connect to database
 const db = mysql2.createConnection(
   {
     host: process.env.DB_HOST_NAME,
@@ -12,6 +11,4 @@ const db = mysql2.createConnection(
   console.log(`Connected to the employee_db database.`)
 );
 
-
-// export the database
 module.exports = db; 
