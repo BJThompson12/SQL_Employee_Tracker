@@ -1,5 +1,6 @@
 const inquirer = require('inquirer');
 const figlet = require('figlet');
+const colors = require('colors');
 const cTable = require('console.table');
 const db = require('./db/connections');
 const { query } = require('./db/connections');
@@ -74,24 +75,29 @@ const viewAllRoles = async () => {
     });
   });
   console.log('');
-  console.log('\x1b[33m ALL ROLES \x1b[0m');
+  console.log('\x1b[34m ALL ROLES \x1b[0m');
   console.log('');
   console.table(data);
   initialPrompt();
 };
 
+// IF a user selects add a role from the inquirer THEN run this function
 const addRole = () => {
-  db.query(`SELECT dep_name FROM department`, async function (err, results) {
+  /*run this query to get the current departments. We are doing this bc we want to keep the list dynamic.
+  To add a role, you have to add it to a department. Thats in our schema and how the database tables are set up.
+  IF they have added more departments, we want to make sure that ALL of them departments are displayed so we are running this query */
+  db.query(`SELECT id, dep_name FROM department`, async function (err, results) {
     if (err) {
-      console.log(err);
     } else {
-      console.log(results);
-      let departmentArray = [];
-      results.forEach((obj) => {
-        // remove the title from the object
-        departmentArray.push(obj['dep_name']);
+      /*Here i am take thew results of the query and we need to put it in the right format for inqiurer. 
+      We want to DISPLAY the name(string) of the department but we want to STORE the ID(number) of it because to put it in the database
+      it HAS to be a number NOT a string. 
+      So we map the results to be in this format {value: <id>, name: '<department name> 
+      In that format inquirer will DISPLAY the name for them to choose BUT we STORE the ID */
+      let departmentArray = results.map((obj)=>{
+        return { value: obj.id, name: obj.dep_name}
       });
-      console.log(departmentArray);
+      // ask the user the questions for details on te role
       await inquirer
         .prompt([
           {
@@ -112,18 +118,26 @@ const addRole = () => {
           },
         ])
         .then((answers) => {
+          // store the answers in a variable using dot notation
           const title = answers.roleTitle;
           const salary = answers.roleSalary;
           const department = answers.roleDepartment;
-          // console.log(title, salary, department);
-          let insertRole = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
+          // log out your answers to make sure they are correct
+          console.log(title, salary, department);
+          /* Now you need to take the answers and RUN the query to ADD them to your database. 
+          You put the stored answer variables IN the query as a Temp literal. 
+          I store the query in a variable to make it a little more clean*/
+          let insertRole = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, ${department})`;
+          // this is where you run the query
           db.query(insertRole, function (err, results) {
             if (err) {
               console.log(err);
             } else {
+              // this is just me showign on the screen HEY your role has been addedd successfully
               console.log('');
               console.log('\x1b[33m ROLE ADDED \x1b[0m');
               console.log('');
+              // start your prompt over to let them choose what they want to do next
               initialPrompt();
             }
           });
@@ -223,7 +237,7 @@ const addEmployee = () => {
                   }
                 });
                 console.log('');
-                console.log('\x1b[33m EMPLOYEE ADDED \x1b[0m');
+                console.log('\x1b[31m EMPLOYEE ADDED \x1b[0m');
                 console.log('');
                 initialPrompt();
               });
