@@ -39,6 +39,10 @@ VALUES ('Human Resources')
 INSERT INTO employees (first_name, last_name, role_id, manager_id) 
 VALUES ('Bruce', 'Wayne', 2, 5)
 
+-- slect all employees
 SELECT employees.first_name, employees.last_name FROM employees
 
+-- select title from roles table --
 SELECT title FROM roles
+
+-- update role of empployee --

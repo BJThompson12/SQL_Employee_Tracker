@@ -11,13 +11,16 @@ const { query } = require('./db/connections');
 
 const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
-    db.query(`SELECT id, dep_name AS 'name' FROM department`, (err, results) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results);
+    db.query(
+      `SELECT id, dep_name AS 'name' FROM department`,
+      (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results);
+        }
       }
-    });
+    );
   });
   console.log('');
   console.log('\x1b[33m ALL DEPARTMENTS \x1b[0m');
@@ -41,7 +44,7 @@ FROM
   JOIN department ON roles.department_id = department.id
   LEFT JOIN employees AS manager ON employees.manager_id = manager.id
 ORDER BY 
-  employees.id ASC;`
+  employees.id ASC;`;
   const data = await new Promise((resolve, reject) => {
     db.query(viewEmployeesQuery, (err, results) => {
       if (err) {
@@ -60,7 +63,7 @@ const viewAllRoles = async () => {
   const viewRolesQuery = `SELECT roles.id, roles.title, department.dep_name AS department, salary
   FROM roles
   INNER JOIN department ON roles.department_id = department.id
-  ORDER BY roles.id ASC`
+  ORDER BY roles.id ASC`;
   const data = await new Promise((resolve, reject) => {
     db.query(viewRolesQuery, (err, results) => {
       if (err) {
@@ -82,12 +85,13 @@ const addRole = () => {
     if (err) {
       console.log(err);
     } else {
-     let departmentArray = []
+      console.log(results);
+      let departmentArray = [];
       results.forEach((obj) => {
         // remove the title from the object
         departmentArray.push(obj['dep_name']);
       });
-      //console.log(departmentArray);
+      console.log(departmentArray);
       await inquirer
         .prompt([
           {
@@ -111,7 +115,7 @@ const addRole = () => {
           const title = answers.roleTitle;
           const salary = answers.roleSalary;
           const department = answers.roleDepartment;
-         // console.log(title, salary, department);
+          // console.log(title, salary, department);
           let insertRole = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, 2)`;
           db.query(insertRole, function (err, results) {
             if (err) {
@@ -155,72 +159,101 @@ const addDepartment = async () => {
 };
 
 const addEmployee = () => {
-  db.query(`SELECT id, title FROM roles ORDER BY id ASC`, async function (err, results) {
+  db.query(
+    `SELECT id, title FROM roles ORDER BY id ASC`,
+    async function (err, results) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log(results);
+        // map the results to a key : value pair for inquirer
+        let roleQueryArray = results.map((obj) => {
+          return { value: obj.id, name: obj.title };
+        });
+        const queryEmployees = `SELECT id, first_name, last_name FROM employees ORDER BY id ASC;`;
+        db.query(queryEmployees, async function (err, results) {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log(results);
+            let employeeQueryArray = results.map((obj) => {
+              return {
+                value: obj.id,
+                name: obj.first_name + ' ' + obj.last_name,
+              };
+            });
+            console.log(employeeQueryArray);
+            employeeQueryArray.push({ value: 'NULL', name: 'None' });
+            await inquirer
+              .prompt([
+                {
+                  type: 'input',
+                  name: 'firstName',
+                  message: 'What is the employees First Name?',
+                },
+                {
+                  type: 'input',
+                  name: 'lastName',
+                  message: 'What is the employees Last Name?',
+                },
+                {
+                  type: 'list',
+                  name: 'employeeRole',
+                  message: 'What is the employees role?',
+                  choices: roleQueryArray,
+                },
+                {
+                  type: 'list',
+                  name: 'manager',
+                  message: 'Who is the employees Manager',
+                  choices: employeeQueryArray,
+                },
+              ])
+              .then((answers) => {
+                const first = answers.firstName;
+                const last = answers.lastName;
+                const role = answers.employeeRole;
+                const manager = answers.manager;
+                console.log(first, last, role, manager);
+                const addEmployeeQuery = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
+              VALUES ('${first}', '${last}', ${role}, ${manager})`;
+                db.query(addEmployeeQuery, async function (err, results) {
+                  if (err) {
+                    console.log(err);
+                  }
+                });
+                console.log('');
+                console.log('\x1b[33m EMPLOYEE ADDED \x1b[0m');
+                console.log('');
+                initialPrompt();
+              });
+          }
+        });
+      }
+    }
+  );
+};
+
+const updateEmployeeRole = () => {
+  db.query('SELECT employees.first_name, employees.last_name FROM employees', async function (err, results) {
     if (err) {
       console.log(err);
     } else {
-      //console.log(results);
-      // map the results to a key : value pair for inquirer
-      let roleQueryArray = results.map(obj => {
-        return {"value": obj.id, "name": obj.title}
-      })
-      const queryEmployees = `SELECT id, first_name, last_name FROM employees ORDER BY id ASC;`;
-      db.query(queryEmployees, async function (err, results) {
-        if (err) {
-          console.log(err);
-        } else {
-          let employeeQueryArray = results.map(obj => {
-            return {'value': obj.id, 'name': obj.first_name +' '+ obj.last_name}
-          })
-          employeeQueryArray.push({'value': 'NULL', 'name': 'None'})
-          await inquirer
-            .prompt([
-              {
-                type: 'input',
-                name: 'firstName',
-                message: 'What is the employees First Name?',
-              },
-              {
-                type: 'input',
-                name: 'lastName',
-                message: 'What is the employees Last Name?',
-              },
-              {
-                type: 'list',
-                name: 'employeeRole',
-                message: 'What is the employees role?',
-                choices: roleQueryArray,
-              },
-              {
-                type: 'list',
-                name: 'manager',
-                message: 'Who is the employees Manager',
-                choices: employeeQueryArray, 
-              },
-            ])
-            .then((answers) => {
-              const first = answers.firstName;
-              const last = answers.lastName;
-              const role = answers.employeeRole;
-              const manager = answers.manager;
-              //console.log(first, last, role, manager);
-              const addEmployeeQuery = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
-              VALUES ('${first}', '${last}', ${role}, ${manager})`
-              db.query(addEmployeeQuery, async function (err, results) {
-                if (err) {
-                  console.log(err);
-                }})
-              console.log('');
-              console.log('\x1b[33m EMPLOYEE ADDED \x1b[0m');
-              console.log('');
-              initialPrompt();
-            });
-        }
+      let  employeeArray = results
+      await inquirer.prompt ([
+        {
+          type: 'list',
+          name: 'employee',
+          message: 'What employee would you like to update?',
+          choices: employeeArray,
+        },
+      ])
+      let employeeQueryArray = results.map((obj) => {
+        return { value: obj.id, name: obj.first_name + ' ' + obj.last_name };
       });
     }
   });
 };
-
 // Connect to MySQL and title
 db.connect((err) => {
   if (err) {
@@ -263,7 +296,7 @@ const initialPrompt = async () => {
         addEmployee();
         break;
       case 'Update Employee Role':
-        console.log('placeholder');
+        updateEmployeeRole()
         break;
     }
   });
