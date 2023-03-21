@@ -4,9 +4,11 @@ const colors = require('colors/safe');
 const cTable = require('console.table');
 const db = require('./db/connections');
 const { query } = require('./db/connections');
-const Connection = require('mysql2/typings/mysql/lib/Connection');
 //const initialPrompt = require('./lib/initialPrompt')
 
+//let departmentArray = [];
+//let roleArray = [];
+//let employeeArray = [];
 
 const viewAllDepartments = async () => {
   const data = await new Promise((resolve, reject) => {
@@ -319,17 +321,21 @@ db.connect((err) => {
   if (err) {
     throw err;
   }
-  console.log(colors.cyan(
-    `==========================================================================`
-  ));
+  console.log(
+    colors.cyan(
+      `==========================================================================`
+    )
+  );
   console.log(``);
   console.log(colors.cyan(figlet.textSync('             Employee')));
   console.log(colors.cyan(figlet.textSync('                Manager')));
   console.log(``);
   console.log(``);
-  console.log(colors.cyan(
-    `==========================================================================`
-  ));
+  console.log(
+    colors.cyan(
+      `==========================================================================`
+    )
+  );
   console.log(``);
   initialPrompt();
 });
@@ -359,9 +365,9 @@ const initialPrompt = async () => {
       case 'Update Employee Role':
         updateEmployeeRole();
         break;
-      // case 'EXIT':
-      //   showThankYou()
-      //   break;
+      case 'Exit':
+        showThankYou();
+        break;
     }
   });
 };
@@ -379,11 +385,27 @@ const initialPromptQuestions = [
       'Add Role',
       'Add an Employee',
       'Update Employee Role',
-      'EXIT'
+      'Exit',
     ],
   },
 ];
 
-// function showThankYou () {
-//  console.log(colors.red(`Thank you for using the Employee Tracker have a great day!`));
-// }
+function showThankYou() {
+  console.log(``);
+  console.log(
+    colors.cyan(
+      `=====================================================================================`
+    )
+  );
+  console.log(``);
+  console.log(colors.cyan(figlet.textSync('See You Next Time!')));
+  // console.log(colors.cyan(figlet.textSync('                Manager')));
+  console.log(``);
+  console.log(``);
+  console.log(
+    colors.cyan(
+      `=====================================================================================`
+    )
+  );
+  process.exit(0)
+}
