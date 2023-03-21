@@ -4,27 +4,63 @@ const colors = require('colors/safe');
 const cTable = require('console.table');
 const db = require('./config/connections');
 const { query } = require('./config/connections');
-const initialPrompt = require('./lib/initialPrompt')
+const initialPromptArray = require('./lib/initialPromptArray');
 
-
-const viewAllDepartments = async () => {
-  const data = await new Promise((resolve, reject) => {
-    db.query(
-      `SELECT id, dep_name AS 'name' FROM department`,
-      (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results);
-        }
-      }
-    );
-  });
-  console.log('');
-  console.log('\x1b[33m ALL DEPARTMENTS \x1b[0m');
-  console.log('');
-  console.table(data);
+// Connect to MySQL and title
+db.connect((err) => {
+  if (err) {
+    throw err;
+  }
+  console.log(
+    colors.cyan(
+      `==========================================================================`
+    )
+  );
+  console.log(``);
+  console.log(colors.cyan(figlet.textSync('             Employee')));
+  console.log(colors.cyan(figlet.textSync('                Manager')));
+  console.log(``);
+  console.log(``);
+  console.log(
+    colors.cyan(
+      `==========================================================================`
+    )
+  );
+  console.log(``);
   initialPrompt();
+});
+
+// initial prompt to show the user
+const initialPrompt = async () => {
+  await inquirer.prompt(initialPromptArray).then((answers) => {
+    const answer = answers.initialPrompt;
+    switch (answer) {
+      case 'View All Departments':
+        viewAllDepartments();
+        break;
+      case 'View All Roles':
+        viewAllRoles();
+        break;
+      case 'View All Employees':
+        viewAllEmployees();
+        break;
+      case 'Add Department':
+        addDepartment();
+        break;
+      case 'Add Role':
+        addRole();
+        break;
+      case 'Add an Employee':
+        addEmployee();
+        break;
+      case 'Update Employee Role':
+        updateEmployeeRole();
+        break;
+      case 'Exit':
+        showThankYou();
+        break;
+    }
+  });
 };
 
 const viewAllEmployees = async () => {
@@ -53,6 +89,28 @@ ORDER BY
     });
   });
   console.log('');
+  console.log(colors.yellow('ALL EMPLOYEES'));
+  console.log('');
+  console.table(data);
+  initialPrompt();
+};
+
+const viewAllDepartments = async () => {
+  const data = await new Promise((resolve, reject) => {
+    db.query(
+      `SELECT id, dep_name AS 'name' FROM department`,
+      (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+  console.log('');
+  console.log(colors.yellow('ALL DEPARTMENTS'));
+  console.log('');
   console.table(data);
   initialPrompt();
 };
@@ -72,25 +130,20 @@ const viewAllRoles = async () => {
     });
   });
   console.log('');
-  console.log('\x1b[34m ALL ROLES \x1b[0m');
+  console.log(colors.yellow('ALL ROLES'));
   console.log('');
   console.table(data);
   initialPrompt();
 };
 
-// IF a user selects add a role from the inquirer THEN run this function
 const addRole = () => {
-  /*run this query to get the current departments. We are doing this bc we want to keep the list dynamic.
-  To add a role, you have to add it to a department. Thats in our schema and how the database tables are set up.
-  IF they have added more departments, we want to make sure that ALL of them departments are displayed so we are running this query */
   db.query(
     `SELECT id, dep_name FROM department`,
     async function (err, results) {
       if (err) {
       } else {
-        /*Here i am take thew results of the query and we need to put it in the right format for inqiurer. 
-      We want to DISPLAY the name(string) of the department but we want to STORE the ID(number) of it because to put it in the database
-      it HAS to be a number NOT a string. 
+        /* Take results of the query and to put it in the right format for inqiurer. 
+      We want to DISPLAY the name(string) of the department but we want to STORE the ID(number) 
       So we map the results to be in this format {value: <id>, name: '<department name> 
       In that format inquirer will DISPLAY the name for them to choose BUT we STORE the ID */
         let departmentArray = results.map((obj) => {
@@ -121,22 +174,14 @@ const addRole = () => {
             const title = answers.roleTitle;
             const salary = answers.roleSalary;
             const department = answers.roleDepartment;
-            // log out your answers to make sure they are correct
-            console.log(title, salary, department);
-            /* Now you need to take the answers and RUN the query to ADD them to your database. 
-          You put the stored answer variables IN the query as a Temp literal. 
-          I store the query in a variable to make it a little more clean*/
             let insertRole = `INSERT INTO roles (title, salary, department_id) VALUES ('${title}', ${salary}, ${department})`;
-            // this is where you run the query
             db.query(insertRole, function (err, results) {
               if (err) {
                 console.log(err);
               } else {
-                // this is just me showign on the screen HEY your role has been addedd successfully
                 console.log('');
-                console.log('\x1b[33m ROLE ADDED \x1b[0m');
+                console.log(colors.green('ROLE ADDED'));
                 console.log('');
-                // start your prompt over to let them choose what they want to do next
                 initialPrompt();
               }
             });
@@ -146,32 +191,6 @@ const addRole = () => {
   );
 };
 
-const addDepartment = async () => {
-  await inquirer
-    .prompt([
-      {
-        type: 'input',
-        message: 'What Department Do You Want To Add?',
-        name: 'depts',
-      },
-    ])
-    .then((answers) => {
-      const department = answers.depts;
-      const sql = `INSERT INTO department (dep_name) VALUES ('${department}')`;
-      db.query(sql, function (err, results) {
-        if (err) {
-          console.log(err);
-        } else {
-          // resolve(results);
-          console.log('');
-          console.log('\x1b[33m DEPARTMENT ADDED \x1b[0m');
-          console.log('');
-          initialPrompt();
-        }
-      });
-    });
-};
-
 const addEmployee = () => {
   db.query(
     `SELECT id, title FROM roles ORDER BY id ASC`,
@@ -179,7 +198,6 @@ const addEmployee = () => {
       if (err) {
         console.log(err);
       } else {
-        console.log(results);
         // map the results to a key : value pair for inquirer
         let roleQueryArray = results.map((obj) => {
           return { value: obj.id, name: obj.title };
@@ -189,14 +207,12 @@ const addEmployee = () => {
           if (err) {
             console.log(err);
           } else {
-            console.log(results);
             let employeeQueryArray = results.map((obj) => {
               return {
                 value: obj.id,
                 name: obj.first_name + ' ' + obj.last_name,
               };
             });
-            console.log(employeeQueryArray);
             employeeQueryArray.push({ value: 'NULL', name: 'None' });
             await inquirer
               .prompt([
@@ -228,7 +244,6 @@ const addEmployee = () => {
                 const last = answers.lastName;
                 const role = answers.employeeRole;
                 const manager = answers.manager;
-                console.log(first, last, role, manager);
                 const addEmployeeQuery = `INSERT INTO employees (first_name, last_name, role_id, manager_id) 
               VALUES ('${first}', '${last}', ${role}, ${manager})`;
                 db.query(addEmployeeQuery, async function (err, results) {
@@ -237,7 +252,7 @@ const addEmployee = () => {
                   }
                 });
                 console.log('');
-                console.log('\x1b[31m EMPLOYEE ADDED \x1b[0m');
+                console.log(colors.green('EMPLOYEE ADDED'));
                 console.log('');
                 initialPrompt();
               });
@@ -246,6 +261,32 @@ const addEmployee = () => {
       }
     }
   );
+};
+
+const addDepartment = async () => {
+  await inquirer
+    .prompt([
+      {
+        type: 'input',
+        message: 'Which Department would you like to Add?',
+        name: 'depts',
+      },
+    ])
+    .then((answers) => {
+      const department = answers.depts;
+      const sql = `INSERT INTO department (dep_name) VALUES ('${department}')`;
+      db.query(sql, function (err, results) {
+        if (err) {
+          console.log(err);
+        } else {
+          // resolve(results);
+          console.log('');
+          console.log(colors.green('DEPARTMENT ADDED'));
+          console.log('');
+          initialPrompt();
+        }
+      });
+    });
 };
 
 const updateEmployeeRole = () => {
@@ -292,7 +333,6 @@ const updateEmployeeRole = () => {
               .then((answers) => {
                 const id = answers.employeeName;
                 const roleId = answers.roleName;
-                console.log(id, roleId);
                 db.query(
                   `UPDATE employees SET role_id = ${roleId} WHERE id = ${id}`,
                   (err, results) => {
@@ -300,7 +340,7 @@ const updateEmployeeRole = () => {
                       console.log(err);
                     }
                     console.log('');
-                    console.log('\x1b[31m EMPLOYEE UPDATED \x1b[0m');
+                    console.log(colors.green('EMPLOYEE UPDATED'));
                     console.log('');
                     initialPrompt();
                   }
@@ -312,27 +352,23 @@ const updateEmployeeRole = () => {
     }
   );
 };
-
-// Connect to MySQL and title
-db.connect((err) => {
-  if (err) {
-    throw err;
-  }
+// Exit the inquirere prompt
+function showThankYou() {
+  console.log(``);
   console.log(
     colors.cyan(
-      `==========================================================================`
+      `=====================================================================================`
     )
   );
   console.log(``);
-  console.log(colors.cyan(figlet.textSync('             Employee')));
-  console.log(colors.cyan(figlet.textSync('                Manager')));
+  console.log(colors.cyan(figlet.textSync('See You Next Time!')));
+  // console.log(colors.cyan(figlet.textSync('                Manager')));
   console.log(``);
   console.log(``);
   console.log(
     colors.cyan(
-      `==========================================================================`
+      `=====================================================================================`
     )
   );
-  console.log(``);
-  initialPrompt();
-});
+  process.exit(0);
+}
