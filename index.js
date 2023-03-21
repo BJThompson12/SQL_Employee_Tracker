@@ -2,8 +2,8 @@ const inquirer = require('inquirer');
 const figlet = require('figlet');
 const colors = require('colors/safe');
 const cTable = require('console.table');
-const db = require('./db/connections');
-const { query } = require('./db/connections');
+const db = require('./config/connections');
+const { query } = require('./config/connections');
 //const initialPrompt = require('./lib/initialPrompt')
 
 //let departmentArray = [];
