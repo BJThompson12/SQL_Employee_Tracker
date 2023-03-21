@@ -7,6 +7,9 @@ FROM roles
 INNER JOIN department ON roles.department_id = department.id
 ORDER BY roles.id ASC
 
+-- view all roles with id and title --
+SELECT id, title FROM roles
+
 -- view all employees --
 SELECT 
   employees.id, 
@@ -46,3 +49,6 @@ SELECT employees.first_name, employees.last_name FROM employees
 SELECT title FROM roles
 
 -- update role of empployee --
+UPDATE employees
+SET role_id = 3
+WHERE id = 21
